@@ -1,7 +1,7 @@
 ---
 hostname: R4
 container_name: clab-mpls-lab-R4
-role: CE
+role: PE
 
 bgp:
   asn: 65100
