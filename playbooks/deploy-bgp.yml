@@ -15,7 +15,7 @@
         docker exec {{ router_config.container_name }} vtysh -c "configure terminal" \
           -c "router bgp {{ router_config.bgp.asn }}" \
           -c "bgp router-id {{ router_config.bgp.router_id }}" \
-          {% for neighbor in router_config.bgp.neighbors %}
+          {% for network in router_config.bgp.address_families.networks %}
           -c "neighbor {{ neighbor.ip }} remote-as {{ neighbor.remote_as }}" \
           -c "neighbor {{ neighbor.ip }} description {{ neighbor.description }}" \
           {% endfor %}
