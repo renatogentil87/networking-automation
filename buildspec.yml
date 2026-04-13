@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo "Installing Ansible..."
+      - pip3 install ansible pyyaml
+
+  pre_build:
+    commands:
+      - echo "Validating configurations..."
+      - ansible-playbook playbooks/validate-bgp.yml --syntax-check
+      - python3 -c "import yaml; [yaml.safe_load(open(f'routers/{r}.yaml')) for r in ['r1','r2','r3','r4']]"
+      - echo "✓ Validation passed"
+
+  build:
+    commands:
+      - echo "Build phase completed - ready for deployment"
+
+artifacts:
+  files:
+    - '**/*'
