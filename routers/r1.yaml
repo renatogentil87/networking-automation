@@ -1,0 +1,18 @@
+---
+hostname: R1
+container_name: clab-mpls-lab-R1
+role: CE
+
+bgp:
+  asn: 65001
+  router_id: 1.1.1.1
+  neighbors:
+    - ip: 10.1.1.2
+      remote_as: 65100
+      description: "PE1 Router"
+  address_families:
+    - afi: ipv4
+      safi: unicast
+      networks:
+        - 192.168.1.1/32
+        - 1.1.1.1/32

@@ -1,0 +1,21 @@
+---
+hostname: R2
+container_name: clab-mpls-lab-R2
+role: CE
+
+bgp:
+  asn: 65100
+  router_id: 2.2.2.2
+  neighbors:
+    - ip: 10.1.1.1
+      remote_as: 65001
+      description: "CE 1 Router"
+    - ip: 10.1.1.4
+      remote_as: 65100
+      description: "PE Router 4"
+  address_families:
+    - afi: ipv4
+      safi: unicast
+      networks:
+        - 2.2.2.2/32
+        - 100.100.100.0/24
