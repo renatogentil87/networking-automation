@@ -1,7 +1,7 @@
 ---
 hostname: R2
 container_name: clab-mpls-lab-R2
-role: CE
+role: PE
 
 bgp:
   asn: 65100

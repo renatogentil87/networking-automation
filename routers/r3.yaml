@@ -1,0 +1,18 @@
+---
+hostname: R3
+container_name: clab-mpls-lab-R3
+role: CE
+
+bgp:
+  asn: 65003
+  router_id: 3.3.3.3
+  neighbors:
+    - ip: 10.1.1.3
+      remote_as: 65100
+      description: "PE2 Router"
+  address_families:
+    - afi: ipv4
+      safi: unicast
+      networks:
+        - 3.3.3.3/32
+        - 192.168.30.1/32

@@ -5,7 +5,7 @@ Automated BGP configuration deployment using AWS CodePipeline.
 ## Topology
 - R1 (CE) - AS 65001 -> R2 (PE) - AS 65100
 - R3 (CE) - AS 65003 -> R4 (PE) - AS 65100
-- R4 (CE) - AS 65100 -> R2 (PE) - AS 65100
+- R4 (CE) - AS 65100 -> R2 (PE) - AS 65100aws
 
 ## Workflow
 1. Edit router YAML files locally
