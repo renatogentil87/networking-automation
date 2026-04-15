@@ -1,7 +1,13 @@
 #!/bin/bash
 
 TOPOLOGY_NAME="network-lab"
-TOPOLOGY_FILE="topology.yml"
+TOPOLOGY_FILE="/home/ubuntu/network-lab/topology.yml"
+
+# Check if topology file exists
+if [ ! -f "$TOPOLOGY_FILE" ]; then
+    echo "✗ Error: Topology file not found at $TOPOLOGY_FILE"
+    exit 1
+fi
 
 # Check if topology exists
 if sudo containerlab inspect --name $TOPOLOGY_NAME &> /dev/null; then
@@ -17,6 +23,8 @@ if sudo containerlab inspect --name $TOPOLOGY_NAME &> /dev/null; then
         echo "⚠ Redeploying topology..."
         sudo containerlab destroy --topo $TOPOLOGY_FILE --cleanup
         sudo containerlab deploy --topo $TOPOLOGY_FILE
+        echo "→ Waiting for containers to initialize..."
+        sleep 30
     fi
 else
     echo "✗ Topology '$TOPOLOGY_NAME' not found"
