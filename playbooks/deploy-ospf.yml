@@ -55,6 +55,7 @@
       register: ospf_config
       failed_when: false
 
+
     - name: Save configuration to file
       shell: docker exec {{ router_config.container_name }} vtysh -c "write memory"
       when: ospf_config.rc == 0
@@ -72,12 +73,10 @@
         msg: "OSPF configuration failed on {{ inventory_hostname }}: {{ ospf_config.stderr }}"
       when: ospf_config.rc != 0
 
-    - name: Restart FRR to activate OSPF
-      shell: docker exec {{ router_config.container_name }} /usr/lib/frr/frrinit.sh restart
-
-    - name: Wait for FRR restart stabilization
-      pause:
-        seconds: 10
+    - name: Restart FRR cleanly
+      shell: |
+        docker exec {{ router_config.container_name }} /usr/lib/frr/frrinit.sh stop
+        docker exec {{ router_config.container_name }} /usr/lib/frr/frrinit.sh start
 
     - name: Wait for OSPF convergence
       pause:
