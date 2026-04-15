@@ -1,14 +1,17 @@
+
 ---
 - name: Deploy BGP Configuration
   hosts: all_routers
   gather_facts: no
   connection: local
+  become: yes  # Add this line to enable sudo for all tasks
 
   tasks:
     - name: Load router configuration
       include_vars:
         file: "../routers/{{ inventory_hostname }}.yaml"
         name: router_config
+      become: no  # This task doesn't need sudo
 
     - name: Check if container is running
       shell: docker ps --filter "name={{ router_config.container_name }}" | grep -c {{ router_config.container_name }}
@@ -18,12 +21,7 @@
 
     - name: Display container status
       debug:
-      msg: "Container {{ router_config.container_name }} status: {{ 'Running' if container_check.rc == 0 else 'Not Found' }}"
-
-
-    - name: Display container status
-      debug:
-        msg: "Container {{ router_config.container_name }} status: {{ 'Running' if container_check.stdout else 'Not Found' }}"
+        msg: "Container {{ router_config.container_name }} status: {{ 'Running' if container_check.rc == 0 else 'Not Found' }}"
 
     - name: Verify FRR is running in container
       shell: docker exec {{ router_config.container_name }} ps aux | grep bgpd
@@ -48,15 +46,19 @@
     - name: Configure BGP on router
       shell: |
         docker exec {{ router_config.container_name }} vtysh -c "configure terminal" \
+          -c "route-map PERMIT-ALL permit 10" \
           -c "router bgp {{ router_config.bgp.asn }}" \
           -c "bgp router-id {{ router_config.bgp.router_id }}" \
           {% for neighbor in router_config.bgp.neighbors %}
           -c "neighbor {{ neighbor.ip }} remote-as {{ neighbor.remote_as }}" \
           -c "neighbor {{ neighbor.ip }} description {{ neighbor.description }}" \
+          -c "neighbor {{ neighbor.ip }} route-map PERMIT-ALL in" \
+          -c "neighbor {{ neighbor.ip }} route-map PERMIT-ALL out" \
           {% endfor %}
           -c "address-family ipv4 unicast" \
           {% for neighbor in router_config.bgp.neighbors %}
           -c "neighbor {{ neighbor.ip }} activate" \
+          -c "redistribute connected route-map PERMIT-ALL" \
           {% endfor %}
           {% for af in router_config.bgp.address_families %}
           {% for network in af.networks %}
@@ -64,9 +66,13 @@
           {% endfor %}
           {% endfor %}
           -c "exit-address-family" \
-          -c "write memory"
       register: bgp_config
       failed_when: false
+
+    - name: Save configuration to file
+      shell: docker exec {{ router_config.container_name }} vtysh -c "write memory"
+      when: bgp_config.rc == 0
+
 
     - name: Display BGP configuration result
       debug:

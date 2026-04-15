@@ -1,0 +1,86 @@
+
+---
+- name: Deploy BGP Configuration
+  hosts: ospf_routers
+  gather_facts: no
+  connection: local
+  become: yes  
+
+  tasks:
+    - name: Load router configuration
+      include_vars:
+        file: "../routers/{{ inventory_hostname }}.yaml"
+        name: router_config
+      become: no  
+
+    - name: Check if container is running
+      shell: docker ps --filter "name={{ router_config.container_name }}" | grep -c {{ router_config.container_name }}
+      register: container_check
+      failed_when: false
+      ignore_errors: yes
+
+    - name: Display container status
+      debug:
+        msg: "Container {{ router_config.container_name }} status: {{ 'Running' if container_check.rc == 0 else 'Not Found' }}"
+
+    - name: Verify FRR is running in container
+      shell: docker exec {{ router_config.container_name }} ps aux | grep ospfd
+      register: ospfd_check
+      failed_when: false
+      ignore_errors: yes
+
+    - name: Display OSPF daemon status
+      debug:
+        msg: "OSPF daemon status: {{ ospfd_check.stdout_lines }}"
+
+    - name: Test vtysh connectivity
+      shell: docker exec {{ router_config.container_name }} vtysh -c "show version"
+      register: vtysh_test
+      failed_when: false
+      ignore_errors: yes
+
+    - name: Display vtysh test result
+      debug:
+        msg: "vtysh test: {{ 'SUCCESS' if vtysh_test.rc == 0 else 'FAILED - ' + vtysh_test.stderr }}"
+
+    - name: Configure OSPF on router
+      shell: |
+          docker exec {{ router_config.container_name }} vtysh -c "configure terminal" \
+            -c "router ospf" \
+            -c "ospf router-id {{ router_config.ospf.router_id }}" \
+            {% for network in router_config.ospf.networks %}
+            -c "network {{ network }} area 0" \
+            -c "redistribute bgp" \
+            {% endfor %}
+            -c "exit"
+      register: ospf_config
+      failed_when: false
+
+    - name: Save configuration to file
+      shell: docker exec {{ router_config.container_name }} vtysh -c "write memory"
+      when: bgp_config.rc == 0
+
+
+    - name: Display OSPF configuration result
+      debug:
+        msg:
+          - "Return code: {{ ospf_config.rc }}"
+          - "STDOUT: {{ ospf_config.stdout }}"
+          - "STDERR: {{ ospf_config.stderr }}"
+
+    - name: Fail if OSPF configuration failed
+      fail:
+        msg: "OSPF configuration failed on {{ inventory_hostname }}: {{ ospf_config.stderr }}"
+      when: ospf_config.rc != 0
+
+    - name: Wait for OSPF convergence
+      pause:
+        seconds: 30
+
+    - name: Verify OSPF neighbors
+      shell: docker exec {{ router_config.container_name }} vtysh -c "show ip ospf neighbor"
+      register: ospf_status
+
+    - name: Display OSPF status
+      debug:
+        msg: "{{ ospf_status.stdout_lines }}"
