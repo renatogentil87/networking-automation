@@ -4,6 +4,6 @@ set -e
 cd /home/ubuntu/network-lab
 
 echo "Deploying BGP configurations..."
-ansible-playbook playbooks/deploy-bgp.yml -i inventory/lab.ini ---vvv
+ansible-playbook playbooks/deploy-bgp.yml -i inventory/lab.ini 
 
 echo "✓ Deployment completed"

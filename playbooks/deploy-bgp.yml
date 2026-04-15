@@ -11,9 +11,15 @@
         name: router_config
 
     - name: Check if container is running
-      shell: docker ps --filter "name={{ router_config.container_name }}" --format "{{.Names}}"
+      shell: docker ps --filter "name={{ router_config.container_name }}" | grep -c {{ router_config.container_name }}
       register: container_check
       failed_when: false
+      ignore_errors: yes
+
+    - name: Display container status
+      debug:
+      msg: "Container {{ router_config.container_name }} status: {{ 'Running' if container_check.rc == 0 else 'Not Found' }}"
+
 
     - name: Display container status
       debug:
