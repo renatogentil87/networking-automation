@@ -1,21 +1,21 @@
 ---
 hostname: R4
-container_name: clab-mpls-lab-R4
+container_name: clab-network-lab-r4
 role: PE
 
 bgp:
   asn: 65100
   router_id: 4.4.4.4
   neighbors:
-    - ip: 10.1.1.4
-      remote_as: 65100
+    - ip: 10.0.34.3
+      remote_as: 65003
       description: "CE 3 Router"
-    - ip: 10.1.1.2
-      remote_as: 65001
+    - ip: 10.0.24.2
+      remote_as: 65100
       description: "PE Router 2"
   address_families:
     - afi: ipv4
       safi: unicast
       networks:
         - 4.4.4.4/32
-        - 104.104.104.0/24
+        - 40.40.40.40/32

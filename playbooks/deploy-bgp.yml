@@ -19,14 +19,21 @@
           -c "neighbor {{ neighbor.ip }} remote-as {{ neighbor.remote_as }}" \
           -c "neighbor {{ neighbor.ip }} description {{ neighbor.description }}" \
           {% endfor %}
-          -c "address-family ipv4 unicast" \
+
+          {% for af in router_config.bgp.address_families | default([]) %}
+          -c "address-family {{ af.afi }} {{ af.safi }}" \
+
           {% for neighbor in router_config.bgp.neighbors %}
           -c "neighbor {{ neighbor.ip }} activate" \
           {% endfor %}
-          {% for network in router_config.bgp.address_families.networks %}
+
+          {% for network in af.networks | default([]) %}
           -c "network {{ network }}" \
           {% endfor %}
+
           -c "exit-address-family" \
+          {% endfor %}
+
           -c "write memory"
 
     - name: Wait for BGP convergence
