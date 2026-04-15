@@ -10,6 +10,35 @@
         file: "../routers/{{ inventory_hostname }}.yaml"
         name: router_config
 
+    - name: Check if container is running
+      shell: docker ps --filter "name={{ router_config.container_name }}" --format "{{.Names}}"
+      register: container_check
+      failed_when: false
+
+    - name: Display container status
+      debug:
+        msg: "Container {{ router_config.container_name }} status: {{ 'Running' if container_check.stdout else 'Not Found' }}"
+
+    - name: Verify FRR is running in container
+      shell: docker exec {{ router_config.container_name }} ps aux | grep bgpd
+      register: bgpd_check
+      failed_when: false
+      ignore_errors: yes
+
+    - name: Display BGP daemon status
+      debug:
+        msg: "BGP daemon status: {{ bgpd_check.stdout_lines }}"
+
+    - name: Test vtysh connectivity
+      shell: docker exec {{ router_config.container_name }} vtysh -c "show version"
+      register: vtysh_test
+      failed_when: false
+      ignore_errors: yes
+
+    - name: Display vtysh test result
+      debug:
+        msg: "vtysh test: {{ 'SUCCESS' if vtysh_test.rc == 0 else 'FAILED - ' + vtysh_test.stderr }}"
+
     - name: Configure BGP on router
       shell: |
         docker exec {{ router_config.container_name }} vtysh -c "configure terminal" \
@@ -19,22 +48,31 @@
           -c "neighbor {{ neighbor.ip }} remote-as {{ neighbor.remote_as }}" \
           -c "neighbor {{ neighbor.ip }} description {{ neighbor.description }}" \
           {% endfor %}
-
-          {% for af in router_config.bgp.address_families | default([]) %}
-          -c "address-family {{ af.afi }} {{ af.safi }}" \
-
+          -c "address-family ipv4 unicast" \
           {% for neighbor in router_config.bgp.neighbors %}
           -c "neighbor {{ neighbor.ip }} activate" \
           {% endfor %}
-
-          {% for network in af.networks | default([]) %}
+          {% for af in router_config.bgp.address_families %}
+          {% for network in af.networks %}
           -c "network {{ network }}" \
           {% endfor %}
-
-          -c "exit-address-family" \
           {% endfor %}
-
+          -c "exit-address-family" \
           -c "write memory"
+      register: bgp_config
+      failed_when: false
+
+    - name: Display BGP configuration result
+      debug:
+        msg:
+          - "Return code: {{ bgp_config.rc }}"
+          - "STDOUT: {{ bgp_config.stdout }}"
+          - "STDERR: {{ bgp_config.stderr }}"
+
+    - name: Fail if BGP configuration failed
+      fail:
+        msg: "BGP configuration failed on {{ inventory_hostname }}: {{ bgp_config.stderr }}"
+      when: bgp_config.rc != 0
 
     - name: Wait for BGP convergence
       pause:
