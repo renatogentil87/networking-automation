@@ -51,7 +51,6 @@
             {% for network in router_config.ospf.networks %}
             -c "network {{ network }} area 0" \
             {% endfor %}
-            -c "redistribute bgp" \
             -c "exit"
       register: ospf_config
       failed_when: false
@@ -72,6 +71,13 @@
       fail:
         msg: "OSPF configuration failed on {{ inventory_hostname }}: {{ ospf_config.stderr }}"
       when: ospf_config.rc != 0
+
+    - name: Restart FRR to activate OSPF
+      shell: docker exec {{ router_config.container_name }} /usr/lib/frr/frrinit.sh restart
+
+    - name: Wait for FRR restart stabilization
+      pause:
+        seconds: 10
 
     - name: Wait for OSPF convergence
       pause:

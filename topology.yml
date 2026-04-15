@@ -35,6 +35,8 @@ topology:
         - ip link set eth2 up
         - ip link set eth3 up
         - ip addr add 20.20.20.20/32 dev eth3
+        - ip link set lo up
+        - ip addr add 22.22.22.22/32 dev lo
     
     r3:
       kind: linux
@@ -68,6 +70,8 @@ topology:
         - ip link set eth2 up
         - ip link set eth3 up
         - ip addr add 40.40.40.40/32 dev eth3
+        - ip link set lo up
+        - ip addr add 44.44.44.44/32 dev lo
 
   links:
     - endpoints: ["r1:eth1", "r2:eth1"]
