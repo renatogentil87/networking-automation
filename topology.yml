@@ -26,8 +26,8 @@ topology:
         sed -i 's/zebra=no/zebra=yes/' /etc/frr/daemons;
         sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons;
         sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons;
-        watchfrr zebra mgmtd bgpd ospfd staticd
-        sleep infinity"
+        /usr/lib/frr/frrinit.sh start
+        sleep infinity
       exec:
         - ip addr add 10.0.12.2/24 dev eth1
         - ip addr add 10.0.24.2/24 dev eth2
@@ -61,8 +61,8 @@ topology:
         sed -i 's/zebra=no/zebra=yes/' /etc/frr/daemons;
         sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons;
         sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons;
-        watchfrr zebra mgmtd bgpd ospfd staticd
-        sleep infinity"
+        /usr/lib/frr/frrinit.sh start
+        sleep infinity
       exec:
         - ip addr add 10.0.34.4/24 dev eth1
         - ip addr add 10.0.24.4/24 dev eth2
