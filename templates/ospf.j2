@@ -1,0 +1,11 @@
+configure terminal
+
+
+router ospf {{ router_config.ospf.process_id }}
+ router-id {{ router_config.ospf.router_id }}
+
+{% for network in router_config.ospf.networks %}
+ network {{ network }} area 0
+{% endfor %}
+
+end

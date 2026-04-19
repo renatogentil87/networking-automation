@@ -43,36 +43,21 @@
       debug:
         msg: "vtysh test: {{ 'SUCCESS' if vtysh_test.rc == 0 else 'FAILED - ' + vtysh_test.stderr }}"
 
-    - name: Configure BGP on router
-      shell: |
-        docker exec {{ router_config.container_name }} vtysh -c "configure terminal" \
-          -c "route-map PERMIT-ALL permit 10" \
-          -c "router bgp {{ router_config.bgp.asn }}" \
-          -c "bgp router-id {{ router_config.bgp.router_id }}" \
-          {% for neighbor in router_config.bgp.neighbors %}
-          -c "neighbor {{ neighbor.ip }} remote-as {{ neighbor.remote_as }}" \
-          -c "neighbor {{ neighbor.ip }} description {{ neighbor.description }}" \
-          -c "neighbor {{ neighbor.ip }} route-map PERMIT-ALL in" \
-          -c "neighbor {{ neighbor.ip }} route-map PERMIT-ALL out" \
-          {% endfor %}
-          -c "address-family ipv4 unicast" \
-          {% for neighbor in router_config.bgp.neighbors %}
-          -c "neighbor {{ neighbor.ip }} activate" \
-          -c "redistribute connected route-map PERMIT-ALL" \
-          {% endfor %}
-          {% for af in router_config.bgp.address_families %}
-          {% for network in af.networks %}
-          -c "network {{ network }}" \
-          {% endfor %}
-          {% endfor %}
-          -c "exit-address-family" \
-      register: bgp_config
-      failed_when: false
+    - name: Generate BGP config from template
+      template:
+        src: "../templates/bgp.j2"
+        dest: "/tmp/{{ inventory_hostname }}_bgp.conf"
 
-    - name: Save configuration to file
+    - name: Copy config into container (temp location)
+      shell: docker cp /tmp/{{ inventory_hostname }}_bgp.conf {{ router_config.container_name }}:/tmp/bgp.conf
+
+    - name: Apply config via vtysh
+      shell: docker exec {{ router_config.container_name }} vtysh -f /tmp/bgp.conf
+      register: bgp_config
+
+    - name: Save configuration
       shell: docker exec {{ router_config.container_name }} vtysh -c "write memory"
       when: bgp_config.rc == 0
-
 
     - name: Display BGP configuration result
       debug:

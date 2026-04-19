@@ -1,0 +1,29 @@
+configure terminal
+
+route-map PERMIT-ALL permit 10
+
+router bgp {{ router_config.bgp.asn }}
+ bgp router-id {{ router_config.bgp.router_id }}
+
+{% for neighbor in router_config.bgp.neighbors %}
+ neighbor {{ neighbor.ip }} remote-as {{ neighbor.remote_as }}
+ neighbor {{ neighbor.ip }} description {{ neighbor.description }}
+ neighbor {{ neighbor.ip }} route-map PERMIT-ALL in
+ neighbor {{ neighbor.ip }} route-map PERMIT-ALL out
+{% endfor %}
+
+ address-family ipv4 unicast
+{% for neighbor in router_config.bgp.neighbors %}
+  neighbor {{ neighbor.ip }} activate
+{% endfor %}
+
+ redistribute connected route-map PERMIT-ALL
+
+{% for af in router_config.bgp.address_families %}
+{% for network in af.networks %}
+  network {{ network }}
+{% endfor %}
+{% endfor %}
+
+ exit-address-family
+end

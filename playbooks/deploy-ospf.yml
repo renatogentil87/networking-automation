@@ -33,30 +33,19 @@
       debug:
         msg: "OSPF daemon status: {{ ospfd_check.stdout_lines }}"
 
-    - name: Test vtysh connectivity
-      shell: docker exec {{ router_config.container_name }} vtysh -c "show version"
-      register: vtysh_test
-      failed_when: false
-      ignore_errors: yes
+    - name: Generate OSPF config from template
+      template:
+        src: "../templates/ospf.j2"
+        dest: "/tmp/{{ inventory_hostname }}_ospf.conf"
 
-    - name: Display vtysh test result
-      debug:
-        msg: "vtysh test: {{ 'SUCCESS' if vtysh_test.rc == 0 else 'FAILED - ' + vtysh_test.stderr }}"
+    - name: Copy config into container (temp location)
+      shell: docker cp /tmp/{{ inventory_hostname }}_ospf.conf {{ router_config.container_name }}:/tmp/ospf.conf
 
-    - name: Configure OSPF on router
-      shell: |
-          docker exec {{ router_config.container_name }} vtysh -c "configure terminal" \
-            -c "router ospf" \
-            -c "ospf router-id {{ router_config.ospf.router_id }}" \
-            {% for network in router_config.ospf.networks %}
-            -c "network {{ network }} area 0" \
-            {% endfor %}
-            -c "exit"
+    - name: Apply config via vtysh
+      shell: docker exec {{ router_config.container_name }} vtysh -f /tmp/ospf.conf
       register: ospf_config
-      failed_when: false
 
-
-    - name: Save configuration to file
+    - name: Save configuration
       shell: docker exec {{ router_config.container_name }} vtysh -c "write memory"
       when: ospf_config.rc == 0
 
@@ -72,11 +61,6 @@
       fail:
         msg: "OSPF configuration failed on {{ inventory_hostname }}: {{ ospf_config.stderr }}"
       when: ospf_config.rc != 0
-
-    - name: Restart FRR cleanly
-      shell: |
-        docker exec {{ router_config.container_name }} /usr/lib/frr/frrinit.sh stop
-        docker exec {{ router_config.container_name }} /usr/lib/frr/frrinit.sh start
 
     - name: Wait for OSPF convergence
       pause:
