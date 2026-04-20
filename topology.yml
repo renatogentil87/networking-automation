@@ -21,13 +21,7 @@ topology:
     r2:
       kind: linux
       image: quay.io/frrouting/frr:9.1.0
-      cmd: >
-       /bin/bash -c "
-        sed -i 's/zebra=no/zebra=yes/' /etc/frr/daemons;
-        sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons;
-        sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons;
-        /usr/lib/frr/frrinit.sh start
-        sleep infinity
+      cmd: /bin/bash -c "sed -i 's/zebra=no/zebra=yes/' /etc/frr/daemons; sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons; sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons; /usr/lib/frr/frrinit.sh start; sleep infinity"
       exec:
         - ip addr add 10.0.12.2/24 dev eth1
         - ip addr add 10.0.24.2/24 dev eth2
@@ -56,13 +50,7 @@ topology:
     r4:
       kind: linux
       image: quay.io/frrouting/frr:9.1.0
-      cmd: >
-       /bin/bash -c "
-        sed -i 's/zebra=no/zebra=yes/' /etc/frr/daemons;
-        sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons;
-        sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons;
-        /usr/lib/frr/frrinit.sh start
-        sleep infinity
+      cmd: /bin/bash -c "sed -i 's/zebra=no/zebra=yes/' /etc/frr/daemons; sed -i 's/bgpd=no/bgpd=yes/' /etc/frr/daemons; sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons; /usr/lib/frr/frrinit.sh start; sleep infinity"
       exec:
         - ip addr add 10.0.34.4/24 dev eth1
         - ip addr add 10.0.24.4/24 dev eth2
