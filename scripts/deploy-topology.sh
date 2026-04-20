@@ -22,7 +22,7 @@ if sudo containerlab inspect --name "$TOPOLOGY_NAME" &>/dev/null; then
     echo "✓ Topology '$TOPOLOGY_NAME' already exists"
 
     echo "→ Updating topology..."
-    sudo containerlab deploy --topo "$TOPOLOGY_FILE"
+    sudo containerlab deploy --topo "$TOPOLOGY_FILE" --reconfigure
 
 else
     echo "→ Topology not found. Deploying fresh environment..."
@@ -30,7 +30,7 @@ else
     # Safe cleanup (ignore errors if nothing exists)
     sudo containerlab destroy --topo "$TOPOLOGY_FILE" --cleanup || true
 
-    sudo containerlab deploy --topo "$TOPOLOGY_FILE"
+    sudo containerlab deploy --topo "$TOPOLOGY_FILE" --reconfigure
 fi
 
 echo ""
