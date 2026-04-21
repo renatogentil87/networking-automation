@@ -1,0 +1,73 @@
+- name: Configure OSPF via Jinja 
+  hosts: ec2
+  become: yes
+
+  vars:
+    lab_dir: /home/ubuntu/frr-configs
+
+  tasks:
+
+    - name: Create config directory
+      file:
+        path: "{{ lab_dir }}"
+        state: directory
+
+    - name: Deploy ContainerLab topology
+      command: containerlab deploy -t /home/ubuntu/topology.clab.yml --reconfigure
+
+    - name: Wait for containers to be ready
+      pause:
+        seconds: 10
+
+    - name: Enable ospfd in daemons file via sed
+      shell: |
+        docker exec clab-frr-lab-{{ item }} sed -i \
+          -e 's/ospfd=no/ospfd=yes/' \
+          /etc/frr/daemons
+      loop: "{{ groups['routers'] }}"
+
+    - name: Start ospfd directly without touching zebra
+      shell: |
+        docker exec clab-frr-lab-{{ item }} bash -c \
+          "pgrep ospfd || /usr/lib/frr/ospfd -d -F traditional -A 127.0.0.1"
+      loop: "{{ groups['routers'] }}"
+
+    - name: Verify FRR daemons are running
+      shell: |
+        docker exec clab-frr-lab-{{ item }} bash -c "ps aux | grep -E 'ospfd|zebra' | grep -v grep"
+      loop: "{{ groups['routers'] }}"
+      register: frr_status
+
+    - name: Print FRR daemon status
+      debug:
+        msg: "{{ item.stdout }}"
+      loop: "{{ frr_status.results }}"
+
+    - name: Configure interfaces
+      shell: |
+        {% for intf in hostvars[item]['interfaces'] | default([]) %}
+        docker exec clab-frr-lab-{{ item }} ip addr add {{ intf.ip }} dev {{ intf.name }} 2>/dev/null || true
+        docker exec clab-frr-lab-{{ item }} ip link set {{ intf.name }} up
+        {% endfor %}
+      loop: "{{ groups['routers'] }}"
+
+    - name: Render configs from host_vars
+      template:
+        src: templates/ospf.j2
+        dest: "{{ lab_dir }}/{{ item }}.conf"
+      loop: "{{ groups['routers'] }}"
+      vars:
+        hostname: "{{ item }}"
+        networks: "{{ hostvars[item]['networks'] }}"
+        router_id: "{{ hostvars[item]['router_id'] }}"
+
+    - name: Push configs into containers
+      shell: |
+        docker cp {{ lab_dir }}/{{ item }}.conf clab-frr-lab-{{ item }}:/etc/frr/frr.conf
+      loop: "{{ groups['routers'] }}"
+
+    - name: Apply OSPF config via vtysh
+      shell: |
+       docker exec clab-frr-lab-{{ item }} vtysh -f /etc/frr/frr.conf
+      loop: "{{ groups['routers'] }}"
+

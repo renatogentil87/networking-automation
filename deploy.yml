@@ -1,0 +1,16 @@
+- name: Deploy containerlab
+  hosts: ec2
+  become: yes
+
+  tasks:
+
+    - name: Copy topology
+      copy:
+        src: topology.clab.yml
+        dest: /home/ubuntu/topology.clab.yml
+
+    - name: Destroy existing lab
+      command: containerlab destroy -t /home/ubuntu/topology.clab.yml --cleanup
+
+    - name: Deploy lab
+      command: containerlab deploy -t /home/ubuntu/topology.clab.yml --reconfigure

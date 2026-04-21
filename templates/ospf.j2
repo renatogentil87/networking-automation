@@ -1,11 +1,18 @@
-configure terminal
+frr version 8
+frr defaults traditional
+hostname {{ hostname }}
+service integrated-vtysh-config
+!
 
-
-router ospf {{ router_config.ospf.process_id }}
- router-id {{ router_config.ospf.router_id }}
-
-{% for network in router_config.ospf.networks %}
- network {{ network }} area 0
+router ospf
+ ospf router-id {{ router_id }}
+ passive-interface default
+ {% for intf in interfaces %}
+ no passive-interface {{ intf.name }}
 {% endfor %}
+{% for net in networks %}
+ network {{ net }} area 0
+{% endfor %}
+!
 
-end
+line vty

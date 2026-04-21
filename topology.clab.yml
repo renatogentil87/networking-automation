@@ -1,0 +1,27 @@
+name: frr-lab
+
+topology:
+  nodes:
+    r1: { kind: linux, image: frrouting/frr:latest }
+    r2: { kind: linux, image: frrouting/frr:latest }
+    r3: { kind: linux, image: frrouting/frr:latest }
+    r4: { kind: linux, image: frrouting/frr:latest }
+    r5: { kind: linux, image: frrouting/frr:latest }
+    r6: { kind: linux, image: frrouting/frr:latest }
+    r7: { kind: linux, image: frrouting/frr:latest }
+    r8: { kind: linux, image: frrouting/frr:latest }
+    r9: { kind: linux, image: frrouting/frr:latest }
+
+  links:
+    - endpoints: ["r1:eth1", "r2:eth1"]
+    - endpoints: ["r2:eth2", "r4:eth2"]
+    - endpoints: ["r3:eth1", "r4:eth1"]
+    - endpoints: ["r2:eth3", "r5:eth1"]
+    - endpoints: ["r2:eth4", "r6:eth1"]
+    - endpoints: ["r5:eth2", "r6:eth2"]
+    - endpoints: ["r4:eth3", "r6:eth3"]
+    - endpoints: ["r5:eth3", "r4:eth4"]
+    - endpoints: ["r5:eth4", "r7:eth1"]
+    - endpoints: ["r6:eth4", "r8:eth1"]
+    - endpoints: ["r8:eth2", "r9:eth2"]
+    - endpoints: ["r7:eth2", "r9:eth1"]
